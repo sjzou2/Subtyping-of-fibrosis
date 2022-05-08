@@ -1,0 +1,35 @@
+rm(list = ls())
+
+
+library(singscore)
+library(msigdbr)
+library(fgsea)
+library(plyr)
+
+Geneset_extract = function(Data_source){
+  geneset_name = Data_source$gs_name
+  geneset_name = geneset_name[!duplicated(geneset_name)]
+  genesets = data.frame()
+  pd <- txtProgressBar(style = 3)
+  for (i in 1:length(geneset_name)) {
+    geneset_tmp = Data_source$gene_symbol[which(Data_source$gs_name == geneset_name[i])]
+    geneset_tmp = as.data.frame(geneset_tmp)
+    geneset_tmp = as.data.frame(t(geneset_tmp))
+    genesets = rbind.fill(genesets, geneset_tmp)
+    setTxtProgressBar(pd, i/length(geneset_name))
+  }
+  rownames(genesets) = geneset_name
+  return(genesets)
+}
+
+#Retrieve human H (hallmark gene sets) 
+HALLMARK <- msigdbr(species = "human", category = "H")
+GO <- msigdbr(species = "human", category = "C5")
+GO_BP = GO[which(GO$gs_subcat == "GO:BP"),]
+GO_CC = GO[which(GO$gs_subcat == "GO:CC"),]
+GO_MF = GO[which(GO$gs_subcat == "GO:MF"),]
+
+HALLMARK_genesets = Geneset_extract(HALLMARK)
+GO_BP_genesets = Geneset_extract(GO_BP)
+GO_CC_genesets = Geneset_extract(GO_CC)
+GO_MF_genesets = Geneset_extract(GO_MF)

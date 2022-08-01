@@ -48,7 +48,6 @@ Singscore_mat = function(Expr, GO_geneset, cluster_frame){
 
 # Common significant genesets GSE57338 and Discovery set
 if(F){
-  setwd("C:/Users/sjzou2/OneDrive - City University of Hong Kong/Macrophage and fibrosis Bioinformatics/Redo")
   load("DiscoverySet_Subtype_specific_signatures.Rdata")
   # Correlation of the functional gene sets with EMT scores and subtype-specific gene sets
   
@@ -61,8 +60,6 @@ if(F){
   Subtype_enrich[(Subtype_enrich %in% Subtype2_specific)] = "Subtype2"
   Discovery$Subtype_enrich = Subtype_enrich
   
-  
-  setwd("C:/Users/sjzou2/OneDrive - City University of Hong Kong/Macrophage and fibrosis Bioinformatics/Redo/EMT_correlated singscores (validate)")
   
   load("GSE57338_geneset_Cor_val.Rdata")
   rownames(GSE57338_Correlation_Subtype1) == rownames(GSE57338_Correlation_Subtype2)
@@ -80,14 +77,9 @@ if(F){
 
 # CSEA of key genesets from EMT-cor-------------
 if(F){
-  setwd("C:/Users/sjzou2/OneDrive - City University of Hong Kong/Macrophage and fibrosis Bioinformatics/Redo/EMT correlation CSEA")
   load("DEG_Subtype1_highlow_CSEA.Rdata")
   load("DEG_Subtype2_highlow_CSEA.Rdata")
   
-  setwd("C:/Users/sjzou2/OneDrive - City University of Hong Kong/Macrophage and fibrosis Bioinformatics/Redo")
-  load("DiscoverySet_Subtype_specific_signatures.Rdata")
-  
-  setwd("C:/Users/sjzou2/OneDrive - City University of Hong Kong/Macrophage and fibrosis Bioinformatics/Redo/EMT_correlated singscores (validate)")
   load("Common_Discovery_GSE57338.Rdata")
   
   rownames(Discovery.CSEA.Subtype_1_high) = Discovery.CSEA.Subtype_1_high$names

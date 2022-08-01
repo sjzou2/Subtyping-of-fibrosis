@@ -16,6 +16,7 @@ library(glmnet)
 library(ggplot2)
 library(ggpubr)
 
+
 Singscore_mat = function(Expr, GO_geneset, cluster_frame){
   Signature_score = cluster_frame
   Signature_score$Sam_ID = rownames(cluster_frame)
@@ -45,7 +46,134 @@ Singscore_mat = function(Expr, GO_geneset, cluster_frame){
 }
 
 
+# Calculate correlation of the 10452 gene sets with EMT 
+if(F){
+  load("DiscoverySet_RPKM.Rdata")
+  load("DiscoverySet_clustered.Rdata")
+  Expr = DiscoverySet_RPKM[,rownames(DiscoverySet_clustered)]
+  rank_Heart_UNorm = rankGenes(Expr)
+  
+  colnames(Expr) == rownames(DiscoverySet_clustered)
+  
+  
+  Hall_mark_EMT = read.table("HALLMARK geneset EMT.txt", sep = "\t")
+  Hall_mark_EMT = Hall_mark_EMT[-c(1:2),]
+  
+  singscore_HeartUNorm_EMT <- simpleScore(rank_Heart_UNorm, upSet = Hall_mark_EMT)
+  
+  
+  load("HALLMARK_GO_genesets.Rdata")
+  Functional_genesets = rbind.fill(GO_BP_genesets, GO_CC_genesets, GO_MF_genesets, HALLMARK_genesets)
+  GN = c(rownames(GO_BP_genesets), c(rownames(GO_CC_genesets)), c(rownames(GO_MF_genesets)), c(rownames(HALLMARK_genesets)))
+  rownames(Functional_genesets) = GN
 
+  Signature_scores = Singscore_mat(DiscoverySet_RPKM, Functional_genesets, DiscoverySet_clustered)
+  save(Signature_scores, file = "Discovery_Signature_scores.Rdata")
+  
+  
+  rownames(singscore_HeartUNorm_EMT) == rownames(DiscoverySet_clustered)
+  singscore_HeartUNorm_EMT$Cluster = DiscoverySet_clustered$kmeans_Heart_silhouette
+  
+  Signature_scores = Signature_scores[rownames(singscore_HeartUNorm_EMT),]
+  rownames(Signature_scores) == rownames(singscore_HeartUNorm_EMT)
+  Signature_scores$EMT_score = singscore_HeartUNorm_EMT$TotalScore
+  
+  Signature_scores$Cluster = singscore_HeartUNorm_EMT$Cluster
+  Signature_scores_cluster1 = Signature_scores[which(Signature_scores$Cluster == "1"),]
+  Signature_scores_cluster2 = Signature_scores[which(Signature_scores$Cluster == "2"),]
+  
+  Genesets = colnames(Signature_scores)
+  Genesets = Genesets[-which(Genesets %in% c("EMT_score", "Cluster"))]
+  Pvalue = c()
+  Coef = c()
+  
+  Signature_scores_cluster1 = as.data.frame(t(na.omit(t(Signature_scores_cluster1))))
+  tmp = Signature_scores_cluster1
+  tmp = apply(tmp, 2, as.numeric)
+  rownames(tmp) = rownames(Signature_scores_cluster1)
+  Signature_scores_cluster1 = as.data.frame(tmp)
+  
+  Genesets = Genesets[(Genesets %in% colnames(Signature_scores_cluster1))]
+  pb <- txtProgressBar(style=3)
+  
+  for (i in 1:length(Genesets)) {
+    res = cor.test(Signature_scores_cluster1[,Genesets[i]], Signature_scores_cluster1$EMT_score, method = "spearman")
+    Pvalue[i] = res$p.value
+    Coef[i] = res$estimate
+    setTxtProgressBar(pb, i/length(Genesets))
+  }
+  close(pb)
+  names(Pvalue) = Genesets
+  names(Coef) = Genesets
+  
+  All_Cluster1_cor = as.data.frame(Genesets)
+  All_Cluster1_cor$Pvalue = Pvalue
+  All_Cluster1_cor$Coef = Coef
+  rownames(All_Cluster1_cor) = All_Cluster1_cor$Genesets
+  
+  Significant_gene_cluster1 = Genesets[which(Pvalue < 0.05)]
+  Significant_gene_cluster1 = as.data.frame(Significant_gene_cluster1)
+  Significant_gene_cluster1$Pvalue = Pvalue[Significant_gene_cluster1[,1]]
+  Significant_gene_cluster1$Coeff = Coef[Significant_gene_cluster1[,1]]
+  rownames(Significant_gene_cluster1) = Significant_gene_cluster1$Significant_gene_cluster1
+  Significant_gene_cluster1 = Significant_gene_cluster1[order(Significant_gene_cluster1$Coeff, decreasing = T),]
+  
+  Positive_gene_Cluster1 = rownames(Significant_gene_cluster1)[which(Significant_gene_cluster1$Coeff >0)]
+  Negative_gene_Cluster1 = rownames(Significant_gene_cluster1)[which(Significant_gene_cluster1$Coeff <0)]
+  
+  
+  Genesets = colnames(Signature_scores)
+  Genesets = Genesets[-which(Genesets %in% c("EMT_score", "Cluster"))]
+  Pvalue = c()
+  Coef = c()
+  
+  Signature_scores_cluster2 = as.data.frame(t(na.omit(t(Signature_scores_cluster2))))
+  tmp = Signature_scores_cluster2
+  tmp = apply(tmp, 2, as.numeric)
+  rownames(tmp) = rownames(Signature_scores_cluster2)
+  Signature_scores_cluster2 = as.data.frame(tmp)
+  
+  Genesets = Genesets[(Genesets %in% colnames(Signature_scores_cluster2))]
+  pb <- txtProgressBar(style=3)
+  
+  for (i in 1:length(Genesets)) {
+    res = cor.test(Signature_scores_cluster2[,Genesets[i]], Signature_scores_cluster2$EMT_score)
+    Pvalue[i] = res$p.value
+    Coef[i] = res$estimate
+    setTxtProgressBar(pb, i/length(Genesets))
+  }
+  close(pb)
+  names(Pvalue) = Genesets
+  names(Coef) = Genesets
+  
+  All_cluster2_cor = as.data.frame(Genesets)
+  All_cluster2_cor$Pvalue = Pvalue
+  All_cluster2_cor$Coef = Coef
+  rownames(All_cluster2_cor) = All_cluster2_cor$Genesets
+  
+  Significant_gene_cluster2 = Genesets[which(Pvalue < 0.05)]
+  Significant_gene_cluster2 = as.data.frame(Significant_gene_cluster2)
+  Significant_gene_cluster2$Pvalue = Pvalue[Significant_gene_cluster2[,1]]
+  Significant_gene_cluster2$Coeff = Coef[Significant_gene_cluster2[,1]]
+  rownames(Significant_gene_cluster2) = Significant_gene_cluster2$Significant_gene_cluster2
+  Significant_gene_cluster2 = Significant_gene_cluster2[order(Significant_gene_cluster2$Coeff, decreasing = T),]
+  
+  Positive_gene_cluster2 = rownames(Significant_gene_cluster2)[which(Significant_gene_cluster2$Coeff >0)]
+  Negative_gene_cluster2 = rownames(Significant_gene_cluster2)[which(Significant_gene_cluster2$Coeff <0)]
+  
+  
+  Cluster1_specific = Positive_gene_Cluster1[(which(Positive_gene_Cluster1 %in% Positive_gene_cluster2 == F))]
+  Cluster2_specific = Positive_gene_cluster2[(which(Positive_gene_cluster2 %in% Positive_gene_Cluster1 == F))]
+  
+  High_coeff_1 = rownames(Significant_gene_cluster1)[which(Significant_gene_cluster1$Coeff >0.5)]
+  High_coeff_2 = rownames(Significant_gene_cluster2)[which(Significant_gene_cluster2$Coeff >0.5)]
+  
+  Cluster1_specific = Cluster1_specific[which(Cluster1_specific %in% High_coeff_1)]
+  Cluster2_specific = Cluster2_specific[which(Cluster2_specific %in% High_coeff_2)]
+  
+  save(All_Cluster1_cor, All_cluster2_cor, Cluster1_specific, Cluster2_specific, file = "DiscoverySet_Subtype_specific_signatures.Rdata")
+  
+}
 # Common significant genesets GSE57338 and Discovery set
 if(F){
   load("DiscoverySet_Subtype_specific_signatures.Rdata")

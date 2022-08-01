@@ -94,11 +94,7 @@ if(F){
   Subtype_2_NES2 = na.omit(Subtype_2_NES2)
   
   Subtype_1_NESScreened = rownames(Subtype_1_NES1)[which(Subtype_1_NES1$pValue<0.05)]
-  Subtype_2_NESScreened = rownames(Subtype_2_NES2)[which(Subtype_2_NES2$pValue<0.05)]
-  
-  
-
-  
+  Subtype_2_NESScreened = rownames(Subtype_2_NES2)[which(Subtype_2_NES2$pValue<0.05)] 
 }
 
 FurtherScreened_1 = intersect(Subtype_1_NESScreened, Common_Subtype1_P)
